@@ -1,0 +1,94 @@
+<html>
+  <head>
+    <title>websocket</title>
+    <script
+      src="https://cdn.socket.io/4.3.2/socket.io.min.js"
+      integrity="sha384-KAZ4DtjNhLChOB/hxXuKqhMLYvx3b5MlT55xPEiNmREKRzeEm+RVPlTnAn0ajQNs"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <h1 id="connection"></h1>
+    <button onclick="connect()">connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <button onclick="messageHistory()">show messageHistory</button>
+    <button onclick="joinRoom(1)">join room</button>
+    <button onclick="findSpecificUserMessages('ken')">
+      findSpecificUserMessages
+    </button>
+    <textarea id="content"></textarea>
+    <button onclick="send()">Send Message</button>
+    <script>
+      const socket = io('http://localhost:8080');
+      const connection = document.getElementById('connection');
+      let msgContent = document.getElementById('content');
+      let roomId = 0;
+      function connect() {
+        socket.connect();
+      }
+
+      function disconnect() {
+        socket.disconnect();
+      }
+
+      function send() {
+        socket.emit('message', {
+          id: crypto.randomUUID(),
+          content: msgContent.value,
+          created_at: new Date(),
+          author: 'ken',
+          roomId,
+        });
+      }
+
+      function messageHistory() {
+        socket.emit('messageHistory', { test: 'test' });
+      }
+
+      function joinRoom(id) {
+        // Joins the conversation via id.
+        socket.emit('join', { roomId: id });
+        roomId = id;
+      }
+
+      function findSpecificUserMessages(author) {
+        socket.emit('findSpecificUserMessages', { author });
+      }
+
+      socket.on('connect', function () {
+        connection.innerHTML = 'Connected';
+
+        // TODO: Maybe pass in the time in here?
+        socket.emit('messageHistory', { date: 'test' });
+      });
+
+      socket.on('messageHistory', function (data) {
+        // TODO: Implement show message history through this function
+        console.log('message', data);
+      });
+
+      socket.on('foundSpecificUserMessages', function (data) {
+        console.log('foundSpecificUserMessages', data);
+      });
+
+      /* socket.on('message', function (data) {
+        // TODO: Access if it is really necessary to know when we send a message
+        console.log(data);
+      }); */
+      socket.on('messages', function (data) {
+        // Message received from another person.
+        alert(
+          `Message ${data.id} received on ${data.roomId} from ${data.author}: ${data.content}`,
+        );
+      });
+      socket.on('exception', function (data) {
+        console.log('event', data);
+      });
+      socket.on('disconnect', function () {
+        connection.innerHTML = 'Disconnected';
+
+        console.log('Disconnected');
+      });
+    </script>
+  </body>
+</html>

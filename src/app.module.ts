@@ -8,7 +8,7 @@ import { MessagesService } from './messages/messages.service';
   imports: [
     EventsModule,
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '../client'), // <-- path to the static files
+      rootPath: join(__dirname, '..', 'client'), // <-- path to the static files
     }),
   ],
   providers: [MessagesService],

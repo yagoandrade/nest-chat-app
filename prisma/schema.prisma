@@ -10,28 +10,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id             String       @id @default(uuid())
-  email          String       @unique
-  createdAt      DateTime     @default(now())
-  username       String       @unique @db.VarChar(20)
-  password       String
-  isMod          Boolean      @default(false)
-  isAdmin        Boolean      @default(false)
-  emailConfirmed Boolean      @default(false)
-  profile        UserProfile?
-}
-
-model UserProfile {
-  user     User      @relation(fields: [id], references: [id])
-  id       String    @unique
-  messages Message[]
-}
-
-model Message {
-  id        String      @id @default(uuid())
-  createdAt DateTime    @default(now())
-  content   String      @db.VarChar(1000)
-  author    UserProfile @relation(fields: [authorId], references: [id])
-  authorId  String
+model messages {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  content    String   @db.VarChar(1000)
+  author     String
+  room_id    String   @db.VarChar(1000)
 }

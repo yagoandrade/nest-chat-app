@@ -12,16 +12,14 @@ import { Server, Socket } from 'socket.io';
 import { Message, MessagesService } from 'src/messages/messages.service';
 
 // DTOs
-class MessageHistoryDto {
-  // You can define properties you expect for this message here
+class getMessageHistoryDto {
+  // TODO: Implement this
+  // from: Date;
+  // until: Date;
 }
 
-class IdentityDto {
-  data: number;
-}
-
-class JoinDto {
-  roomId: string;
+class JoinRoomDto {
+  room_id: string;
 }
 
 class MessageDto {
@@ -29,7 +27,7 @@ class MessageDto {
   author: string;
   created_at: Date;
   content: string;
-  roomId?: string; // Optional because sometimes we broadcast to all
+  room_id?: string; // Optional because sometimes we broadcast to all
 }
 
 class FindSpecificUserMessagesDto {
@@ -49,26 +47,23 @@ export class EventsGateway {
 
   messages: string[] = [];
 
-  @SubscribeMessage('messageHistory')
-  findAll(@MessageBody() data: MessageHistoryDto): Observable<WsResponse<any>> {
+  @SubscribeMessage('getMessageHistory')
+  findAll(
+    @MessageBody() data: getMessageHistoryDto,
+  ): Observable<WsResponse<any>> {
     const messages = this.messagesService.findAll();
 
     return from(messages).pipe(
-      map((item) => ({ event: 'messageHistory', data: item })),
+      map((item) => ({ event: 'getMessageHistory', data: item })),
     );
   }
 
-  @SubscribeMessage('identity')
-  async identity(@MessageBody() { data }: IdentityDto): Promise<number> {
-    return data; // accessing data from DTO
-  }
-
-  @SubscribeMessage('join')
+  @SubscribeMessage('joinRoom')
   async joinRoom(
-    @MessageBody() data: JoinDto,
+    @MessageBody() data: JoinRoomDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    socket.join(data.roomId); // accessing roomId from DTO
+    socket.join(data.room_id); // accessing room_id from DTO
   }
 
   @SubscribeMessage('message')
@@ -78,11 +73,11 @@ export class EventsGateway {
   ) {
     this.messagesService.add(message); // Store message using service
 
-    if (message.roomId) {
+    if (message.room_id) {
       // If it is on a DM or Group Chat channel
-      socket.broadcast.to(message.roomId).emit('messages', message);
+      socket.broadcast.to(message.room_id).emit('newMessage', message);
     } else {
-      socket.broadcast.emit('messages', message);
+      socket.broadcast.emit('newMessage', message);
     }
 
     return message;

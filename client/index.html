@@ -11,20 +11,25 @@
     <h1 id="connection"></h1>
     <button onclick="connect()">connect</button>
     <button onclick="disconnect()">Disconnect</button>
-    <button onclick="messageHistory()">show messageHistory</button>
-    <button onclick="joinRoom(1)">join room</button>
+    <button onclick="getMessageHistory()">show getMessageHistory</button>
+    <button onclick="joinRoom('1')">join room</button>
     <button onclick="findSpecificUserMessages('ken')">
       findSpecificUserMessages
     </button>
     <textarea id="content"></textarea>
     <button onclick="send()">Send Message</button>
+    <div id="messages"></div>
     <script>
-      const socket = io('http://localhost:8080');
+      // Initialize websocket and join the default room: '0'
+      const socket = io('http://localhost:3000');
+      let room_id = '0';
+      joinRoom(room_id);
+
       const connection = document.getElementById('connection');
       let msgContent = document.getElementById('content');
-      let roomId = 0;
+
       function connect() {
-        socket.connect();
+        socket.connect().joinRoom('0');
       }
 
       function disconnect() {
@@ -37,18 +42,23 @@
           content: msgContent.value,
           created_at: new Date(),
           author: 'ken',
-          roomId,
+          room_id,
         });
+
+        // Add message to the board
+        var item = document.createElement('div');
+        item.innerText = 'YOU: ' + msgContent.value;
+        document.getElementById('messages').appendChild(item);
       }
 
-      function messageHistory() {
-        socket.emit('messageHistory', { test: 'test' });
+      function getMessageHistory() {
+        socket.emit('getMessageHistory', { test: 'test' });
       }
 
       function joinRoom(id) {
         // Joins the conversation via id.
-        socket.emit('join', { roomId: id });
-        roomId = id;
+        socket.emit('joinRoom', { room_id: id });
+        room_id = id;
       }
 
       function findSpecificUserMessages(author) {
@@ -59,35 +69,35 @@
         connection.innerHTML = 'Connected';
 
         // TODO: Maybe pass in the time in here?
-        socket.emit('messageHistory', { date: 'test' });
+        socket.emit('getMessageHistory');
       });
 
-      socket.on('messageHistory', function (data) {
-        // TODO: Implement show message history through this function
-        console.log('message', data);
+      socket.on('disconnect', function () {
+        // TODO: handle disconnect
+        connection.innerHTML = 'Disconnected';
+      });
+
+      socket.on('getMessageHistory', function (message) {
+        var item = document.createElement('div');
+        item.innerText = message.content;
+        document.getElementById('messages').appendChild(item);
       });
 
       socket.on('foundSpecificUserMessages', function (data) {
+        // TODO: Implement this feature
         console.log('foundSpecificUserMessages', data);
       });
 
-      /* socket.on('message', function (data) {
-        // TODO: Access if it is really necessary to know when we send a message
-        console.log(data);
-      }); */
-      socket.on('messages', function (data) {
+      socket.on('newMessage', function (data) {
         // Message received from another person.
-        alert(
-          `Message ${data.id} received on ${data.roomId} from ${data.author}: ${data.content}`,
-        );
+        var item = document.createElement('div');
+        item.innerText = 'SOMEONE ELSE: ' + data.content;
+        document.getElementById('messages').appendChild(item);
       });
-      socket.on('exception', function (data) {
-        console.log('event', data);
-      });
-      socket.on('disconnect', function () {
-        connection.innerHTML = 'Disconnected';
 
-        console.log('Disconnected');
+      socket.on('exception', function (data) {
+        // TODO: handle exception events
+        console.log('event', data);
       });
     </script>
   </body>

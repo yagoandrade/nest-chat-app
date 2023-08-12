@@ -11,26 +11,28 @@ export interface Message {
 
 @Injectable()
 export class MessagesService {
-  private messages: Message[] = [];
+  private messages: Map<string, Message> = new Map();
 
   constructor() {
     this.loadMessages();
   }
 
   private async loadMessages(): Promise<void> {
-    this.messages = await prisma.messages.findMany();
+    const messagesFromDb = await prisma.messages.findMany();
+    for (const message of messagesFromDb) {
+      this.messages.set(message.id, message);
+    }
   }
 
   findAll(): Message[] {
-    return this.messages;
+    return [...this.messages.values()];
   }
 
   findSpecificUserMessages(username: string): Message[] {
-    return this.messages.filter((msg) => msg.author == username);
+    return [...this.messages.values()].filter((msg) => msg.author == username);
   }
 
   async add(message: Message): Promise<void> {
-    this.messages.push(message);
     await prisma.messages.create({
       data: {
         id: message.id,
@@ -40,5 +42,41 @@ export class MessagesService {
         room_id: message.room_id,
       },
     });
+
+    this.messages.set(message.id, message);
+  }
+
+  async remove(message_id: string): Promise<Message> {
+    // TODO: Test this
+    const deletedMessage = this.messages.get(message_id);
+    this.messages.delete(message_id);
+
+    await prisma.messages.delete({
+      where: {
+        id: message_id,
+      },
+    });
+
+    return deletedMessage;
+  }
+
+  async edit(
+    message_id: string,
+    new_message_content: string,
+  ): Promise<Message> {
+    // TODO: Test this
+    const message = this.messages.get(message_id);
+    if (message) {
+      message.content = new_message_content;
+      await prisma.messages.update({
+        where: {
+          id: message_id,
+        },
+        data: {
+          content: new_message_content,
+        },
+      });
+    }
+    return message;
   }
 }

@@ -48,9 +48,7 @@ export class EventsGateway {
   messages: string[] = [];
 
   @SubscribeMessage('getMessageHistory')
-  findAll(
-    @MessageBody() data: getMessageHistoryDto,
-  ): Observable<WsResponse<any>> {
+  findAll(): Observable<WsResponse<any>> {
     const messages = this.messagesService.findAll();
 
     return from(messages).pipe(
@@ -71,16 +69,22 @@ export class EventsGateway {
     @MessageBody() message: MessageDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    this.messagesService.add(message); // Store message using service
+    try {
+      await this.messagesService.add(message); // Store message using service
 
-    if (message.room_id) {
-      // If it is on a DM or Group Chat channel
-      socket.broadcast.to(message.room_id).emit('newMessage', message);
-    } else {
-      socket.broadcast.emit('newMessage', message);
+      if (message.room_id) {
+        // User is in DM or a GROUP CHAT CHANNEL
+        socket.broadcast.to(message.room_id).emit('newMessage', message);
+      } else {
+        // User is in GENERAL CHAT
+        socket.broadcast.emit('newMessage', message);
+      }
+
+      return { status: 'success', timestamp: new Date() };
+    } catch (error) {
+      console.error('Failed to process message:', error);
+      return { status: 'error', message: 'Failed to process message' };
     }
-
-    return message;
   }
 
   // TODO: Change to getMessagesByAuthor
@@ -93,7 +97,6 @@ export class EventsGateway {
       data.author,
     );
     socket.emit('foundSpecificUserMessages', specificUserMessages);
-    console.log(specificUserMessages);
     return specificUserMessages;
   }
 }

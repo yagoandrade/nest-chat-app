@@ -2,8 +2,12 @@ This is a real-time chat application built using NestJS, a progressive Node.js f
 
 ### Features
 **Real-time Messaging:** Instantly send and receive messages with users in private or group chats.
+
 **Group Chat Rooms:** Create, join, and manage group chat rooms.
+
 **Message History:** Access previous conversations and messages.
+
+**User Authentication:** Sign up, sign in, and manage user profiles.
 
 Contributing
 Contributions are welcome! For major changes, please open an issue first to discuss what you would like to change.
